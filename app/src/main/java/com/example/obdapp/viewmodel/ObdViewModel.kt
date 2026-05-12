@@ -1,5 +1,6 @@
 package com.example.obdapp.viewmodel
 
+import android.annotation.SuppressLint
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -46,6 +47,7 @@ class ObdViewModel() : ViewModel() {
     val rpmHistory = MutableStateFlow<List<Float>>(emptyList())
 
 
+    @SuppressLint("MissingPermission")
     fun startObd() {
         obdJob?.cancel()
 

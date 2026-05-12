@@ -44,6 +44,7 @@ import com.example.obdapp.domain.model.ObdConnectionState
 
 
 @Composable
+@SuppressLint("MissingPermission")
 fun BluetoothScanScreen(
     devices: List<BluetoothDevice>,
     viewModel: BluetoothConnectViewModel,
@@ -135,6 +136,7 @@ fun BluetoothScanScreen(
 }
 
 @Composable
+@SuppressLint("MissingPermission")
 fun DeviceItem(
     device: BluetoothDevice,
     onClick: () -> Unit,

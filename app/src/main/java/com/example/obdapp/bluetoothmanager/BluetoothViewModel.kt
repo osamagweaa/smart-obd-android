@@ -1,5 +1,6 @@
 package com.example.obdapp.bluetoothmanager
 
+import android.annotation.SuppressLint
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.obdapp.App
@@ -99,6 +100,7 @@ class BluetoothViewModel() : ViewModel() {
         }
     }
 
+    @SuppressLint("MissingPermission")
     fun connect(deviceName: String) {
         lastDeviceName = deviceName
 

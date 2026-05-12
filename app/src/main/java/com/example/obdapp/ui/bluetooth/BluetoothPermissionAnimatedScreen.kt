@@ -1,6 +1,7 @@
 package com.example.obdapp.ui.bluetooth
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
@@ -139,6 +140,7 @@ fun BluetoothPermissionAnimatedScreen(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+@SuppressLint("MissingPermission")
 @Composable
 fun BluetoothFlowScreen(
     navController: NavController,

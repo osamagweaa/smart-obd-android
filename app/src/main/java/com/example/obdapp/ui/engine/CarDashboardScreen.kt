@@ -549,7 +549,7 @@ fun ProNeedleGauge(
     //Column(horizontalAlignment = Alignment.CenterHorizontally) {
         //Text(title, color = Color.White, fontSize = 14.sp)
 
-        Box(contentAlignment = Alignment.Center, modifier = modifier) {
+    Box(contentAlignment = Alignment.Center, modifier = modifier) {
 
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val center = size.center
