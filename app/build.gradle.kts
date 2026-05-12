@@ -74,9 +74,7 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    //implementation(libs.obd)
-    // Kolin OBD API
-    implementation("com.github.eltonvs:kotlin-obd-api:1.3.0")
+    implementation(libs.obd)
     implementation(libs.filament.android)
 
 
@@ -104,7 +102,6 @@ dependencies {
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.34.0")
 
 
-    implementation("com.github.pires:obd-java-api:1.0")
     implementation("com.airbnb.android:lottie-compose:6.3.0")
     //implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")

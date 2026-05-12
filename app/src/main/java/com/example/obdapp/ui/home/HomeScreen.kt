@@ -1,294 +1,163 @@
 package com.example.obdapp.ui.home
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Article
-import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.outlined.DirectionsCar
-import androidx.compose.material.icons.outlined.List
-import androidx.compose.material.icons.outlined.Speed
-import androidx.compose.material.icons.outlined.Warning
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
-import com.example.obdapp.bluetoothmanager.BluetoothViewModel
-import com.example.obdapp.geminianalysis.viewmodel.LLMViewModel
-import com.example.obdapp.ui.dtc.DtcScreenPro
-import com.example.obdapp.ui.engine.CarDashboardScreen
-import com.example.obdapp.ui.engine.EngineDiagnosticsScreenLight
-
-import com.example.obdapp.ui.engine.SmartDiagnosisOverlay
-import com.example.obdapp.ui.language.LanguageScreen
+import com.example.obdapp.domain.model.ObdConnectionState
 import com.example.obdapp.ui.navigation.Route
-import com.example.obdapp.ui.settings.SettingsScreen
-import com.example.obdapp.ui.settings.UnitsScreen
-import com.example.obdapp.ui.theme.AccentGreen
-import com.example.obdapp.ui.theme.AppBgDark
-import com.example.obdapp.ui.theme.CardBackground
-import kotlin.String
+
+private val AutoDiagBg = Color(0xFFF5F7FA)
+private val CardWhite = Color.White
+private val PrimaryText = Color(0xFF16202A)
+private val SecondaryText = Color(0xFF667085)
+private val Blue = Color(0xFF2563EB)
 
 @Composable
-fun HomeScreen(navControllerParent: NavController,viewModel: BluetoothViewModel = viewModel(),
-        viewModelChat: LLMViewModel = hiltViewModel(),
+fun HomeScreen(
+    navController: NavController,
+    viewModel: HomeViewModel = hiltViewModel()
 ) {
-    val navController = rememberNavController()
+    val uiState by viewModel.uiState.collectAsState()
 
-    val showDiagnosis by viewModelChat.showDiagnosis.collectAsState()
-    println("hello showDiagnosis: $showDiagnosis")
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AutoDiagBg)
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            Spacer(Modifier.height(24.dp))
+            ConnectionChip(uiState.connectionState) {
+                navController.navigate(Route.Bluetooth.name)
+            }
+        }
+        item {
+            Text("AutoDiag", fontSize = 34.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
+            Text(uiState.vehicleInfo.displayName, fontSize = 18.sp, color = SecondaryText)
+        }
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                    HomeCard("🔴", "Luz del motor", "Entiende la avería sin tecnicismos", Modifier.weight(1f)) {
+                        navController.navigate(Route.Dtc.name)
+                    }
+                    HomeCard("✅", "¿Puedo conducir?", "Consejo rápido para hoy", Modifier.weight(1f)) {
+                        navController.navigate(Route.SafeToday.name)
+                    }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                    HomeCard("📋", "ITV", "Comprueba monitores OBD", Modifier.weight(1f)) {
+                        navController.navigate(Route.Itv.name)
+                    }
+                    HomeCard("💨", "DPF", "Estado del filtro diésel", Modifier.weight(1f)) {
+                        navController.navigate(Route.Dpf.name)
+                    }
+                }
+                HomeCard("📄", "Informe", "Texto listo para WhatsApp o email", Modifier.fillMaxWidth()) {
+                    navController.navigate(Route.Report.name)
+                }
+            }
+        }
+        item {
+            LiveStrip(uiState)
+        }
+    }
+}
 
+@Composable
+private fun ConnectionChip(state: ObdConnectionState, onClick: () -> Unit) {
+    val label = when (state) {
+        is ObdConnectionState.Connected -> "🔵 Conectado — ${state.deviceName}"
+        is ObdConnectionState.Connecting -> "🔵 Conectando..."
+        is ObdConnectionState.Error -> "⚪ ${state.messageEs}"
+        else -> "⚪ Sin conexión — Toca para conectar"
+    }
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = if (state is ObdConnectionState.Connected) Color(0xFFE8F2FF) else Color.White,
+        modifier = Modifier.clickable(onClick = onClick)
+    ) {
+        Text(label, modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp), color = PrimaryText)
+    }
+}
 
-    var showOverlay by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        viewModelChat.diagnosisEvent.collect { event ->
-            when(event) {
-                LLMViewModel.DiagnosisEvent.Show -> showOverlay = true
-                LLMViewModel.DiagnosisEvent.Dismiss -> showOverlay = false
+@Composable
+private fun HomeCard(
+    icon: String,
+    title: String,
+    subtitle: String,
+    modifier: Modifier,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = modifier
+            .height(132.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = CardWhite),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.SpaceBetween) {
+            Text(icon, fontSize = 26.sp)
+            Column {
+                Text(title, fontWeight = FontWeight.Bold, color = PrimaryText, fontSize = 18.sp)
+                Text(subtitle, color = SecondaryText, style = MaterialTheme.typography.bodySmall)
             }
         }
     }
+}
 
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
-    Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            modifier = Modifier.background(AppBgDark),
-            //bottomBar = { VibrantBottomBar(navController) }
-            containerColor = CardBackground,
-            //AppBgDark,
-            bottomBar = {
-                FloatingBottomBar(
-                    currentRoute = currentRoute,
-                    onItemSelected = { item ->
-                        navController.navigate(item.route) {
-                            popUpTo(navController.graph.startDestinationId) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
+@Composable
+private fun LiveStrip(uiState: HomeUiState) {
+    Card(
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = CardWhite),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Text("Datos en vivo", fontWeight = FontWeight.Bold, color = PrimaryText)
+            Spacer(Modifier.height(10.dp))
+            if (uiState.stripPids.isEmpty()) {
+                Text("Conecta un ELM327 para ver RPM, temperatura y velocidad.", color = SecondaryText)
+            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    uiState.stripPids.forEach { pid ->
+                        Box(
+                            modifier = Modifier
+                                .background(Color(0xFFEFF6FF), RoundedCornerShape(14.dp))
+                                .padding(horizontal = 10.dp, vertical = 8.dp)
+                        ) {
+                            Text("${pid.labelEs}: ${pid.displayValue} ${pid.unit}", color = Blue, fontSize = 12.sp)
                         }
-                    }
-                )
-            }
-        ) { padding ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        AppBgDark
-                    )
-            ) {
-
-                NavHost(
-                    navController = navController,
-                    startDestination = Route.Engine.name,
-                    modifier = Modifier.padding(padding)
-                ) {
-
-                    composable(Route.Engine.name) {
-                        CarDashboardScreen(navControllerParent, viewModel, onUnitClick = {
-                            navControllerParent.navigate(Route.OnboardingObdScreen.name)
-
-                        },viewModelChat, onDiagnosticClick = {
-                        },
-                        )
-                    }
-
-                    composable(Route.Sensors.name) {
-
-                        EngineDiagnosticsScreenLight(viewModel)
-
-                    }
-                    composable(Route.News.name) {
-                        SettingsScreen(
-                            onUnitClick = {
-                                navController.navigate(Route.Units.name) {
-                                    launchSingleTop = true
-                                }
-                            },
-                            onLanguageClick = {
-                                navController.navigate(Route.Language.name) {
-                                    launchSingleTop = true
-                                }
-                            },
-                            onThemeClick = {}
-                        )
-                    }
-                    composable(Route.Dtc.name) {
-                        DtcScreenPro( onReadClick = {}, onClearClick = {}, viewModel = viewModel)
-                    }
-                    composable(Route.Units.name) {
-                        UnitsScreen(navController)
-                    }
-                    composable(Route.Language.name) {
-                        LanguageScreen {
-                            navController.navigate(Route.Home.name) {
-                                popUpTo(Route.Language.name) { inclusive = true }
-                            }
-                        }
-
                     }
                 }
             }
-
-
-        }
-        if (showOverlay) {
-            SmartDiagnosisOverlay(
-                onDismiss = { showOverlay = false }
-            )
-        }
-//        if (showDiagnosis) {
-//            SmartDiagnosisOverlay(
-//                onDismiss = {
-//
-//                    viewModelChat.setShowDiagnosis(false)
-//                }
-//            )
-//        }
-    }
-}
-
-
-sealed class BottomNavItem(
-    val route: String,
-    val icon: ImageVector,
-    val selectedIcon: ImageVector
-) {
-    object Dashboard : BottomNavItem(
-        "dashboard",
-        Icons.Outlined.DirectionsCar,
-        Icons.Filled.DirectionsCar
-    )
-
-    object LiveData : BottomNavItem(
-        "live",
-        Icons.Outlined.Speed,
-        Icons.Filled.Speed
-    )
-
-    object Alerts : BottomNavItem(
-        "alerts",
-        Icons.Outlined.Warning,
-        Icons.Filled.Warning
-    )
-
-    object Logs : BottomNavItem(
-        "logs",
-        Icons.Outlined.List,
-        Icons.Filled.Article
-    )
-}
-
-@Composable
-fun FloatingBottomBar(
-    currentRoute: String?,
-    onItemSelected: (BottomNavItem) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val items = listOf(
-        BottomNavItem.Dashboard,
-        BottomNavItem.LiveData,
-        BottomNavItem.Alerts,
-        BottomNavItem.Logs
-    )
-
-    Surface(
-        modifier = modifier
-            .padding(horizontal = 16.dp, vertical = 24.dp),
-        color = CardBackground,
-            //AppBgDark,
-        shape = RoundedCornerShape(20.dp),
-        shadowElevation = 8.dp
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(66.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            items.forEach { item ->
-                BottomBarItem(
-                    item = item,
-                    selected = currentRoute == item.route,
-                    onClick = { onItemSelected(item) }
-                )
-            }
         }
     }
-    Spacer(Modifier.height(24.dp))
-
 }
-
-@Composable
-private fun BottomBarItem(
-    item: BottomNavItem,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    val scale by animateFloatAsState(
-        targetValue = if (selected) 1.1f else 1f,
-        animationSpec = tween(180),
-        label = "iconScale"
-    )
-
-    val color by animateColorAsState(
-        targetValue = if (selected) AccentGreen else Color(0xFF007AFF).copy(alpha = 0.5f),
-            ///Color(0xFF4A6FA5).copy(alpha = 0.7f),
-            //AccentGreen.copy(alpha = 0.1f),
-        animationSpec = tween(180),
-        label = "iconColor"
-    )
-
-    IconButton(
-        onClick = onClick,
-        modifier = Modifier.scale(scale)
-    ) {
-        Icon(
-            imageVector = if (selected) item.selectedIcon else item.icon,
-            contentDescription = item.route,
-            tint = color,
-            modifier = Modifier.size(24.dp)
-        )
-    }
-}
-
-
-
-

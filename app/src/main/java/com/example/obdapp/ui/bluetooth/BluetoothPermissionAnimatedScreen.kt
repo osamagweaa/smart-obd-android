@@ -59,9 +59,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.obdapp.bluetoothmanager.BluetoothViewModel
 import com.example.obdapp.ui.engine.textPrimary
 import com.example.obdapp.ui.navigation.Route
 import com.example.obdapp.ui.theme.AppBgDark
@@ -143,7 +142,7 @@ fun BluetoothPermissionAnimatedScreen(
 @Composable
 fun BluetoothFlowScreen(
     navController: NavController,
-    viewModel: BluetoothViewModel = viewModel()
+    viewModel: BluetoothConnectViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val activity = context as Activity
@@ -188,6 +187,13 @@ fun BluetoothFlowScreen(
 
     LaunchedEffect(bluetoothEnabled) {
         if (bluetoothEnabled) {
+            BluetoothAdapter.getDefaultAdapter()?.bondedDevices
+                ?.filter(::isElmDevice)
+                ?.forEach { device ->
+                    if (!devices.any { it.address == device.address }) {
+                        devices.add(device)
+                    }
+                }
             startBluetoothScan(context) { device ->
                 if (!devices.any { it.address == device.address }) {
                     devices.add(device)
@@ -200,7 +206,7 @@ fun BluetoothFlowScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Bluetooth Devices") },
+                title = { Text("Adaptadores Bluetooth") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = AppBgDark,   // 👈 same as background
                     titleContentColor = textPrimary,
@@ -209,7 +215,7 @@ fun BluetoothFlowScreen(
                 ),
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
                     }
                 }
             )
@@ -251,8 +257,8 @@ fun BluetoothFlowScreen(
             if (showSettingsDialog) {
                 AlertDialog(
                     onDismissRequest = {},
-                    title = { Text("Permission Required") },
-                    text = { Text("Please enable permissions in Settings") },
+                    title = { Text("Permiso necesario") },
+                    text = { Text("Activa los permisos Bluetooth en Ajustes para conectar el ELM327.") },
                     confirmButton = {
                         TextButton(onClick = {
                             val intent = Intent(
@@ -261,7 +267,7 @@ fun BluetoothFlowScreen(
                             )
                             context.startActivity(intent)
                         }) {
-                            Text("Open Settings")
+                            Text("Abrir ajustes")
                         }
                     }
                 )
@@ -308,7 +314,7 @@ fun EnableBluetoothScreen(
                 Spacer(Modifier.height(16.dp))
 
                 Text(
-                    "Bluetooth is turned off",
+                "Bluetooth está apagado",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = textPrimary,

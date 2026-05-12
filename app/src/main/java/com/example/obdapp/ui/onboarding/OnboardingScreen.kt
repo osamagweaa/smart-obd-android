@@ -1,29 +1,27 @@
 package com.example.obdapp.ui.onboarding
 
-import androidx.compose.foundation.Image
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -34,119 +32,63 @@ import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.obdapp.R
-import com.example.obdapp.ui.theme.AppBgDark
 
 @Composable
 fun OnboardingScreen(onStart: () -> Unit) {
-
-    val AccentBlue = Color(0xFF007AFF)
-    val AppBg = Color(0xFFF5F5F5)
-    val textPrimary = Color(0xFF1A1A1A)
-    val textSecondary = Color(0xFF555555)
-
-    Box(
+    val context = LocalContext.current
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(AppBg)
+            .background(Color(0xFFF5F7FA))
+            .padding(22.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Spacer(Modifier.height(48.dp))
+        CarLottieAnimation()
+        Text("AutoDiag", fontSize = 40.sp, fontWeight = FontWeight.Bold, color = Color(0xFF16202A))
+        Text(
+            "Convierte un adaptador Bluetooth ELM327 barato en un asesor claro para la luz del motor, la ITV y el DPF.",
+            textAlign = TextAlign.Center,
+            color = Color(0xFF667085)
+        )
+        Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Qué necesitas", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Text("1. Un adaptador ELM327 Bluetooth enchufado al coche.")
+                Text("2. Emparejarlo desde ajustes de Android.")
+                Text("3. Abrir AutoDiag y tocar conectar.")
+            }
+        }
+        Spacer(Modifier.weight(1f))
+        OutlinedButton(
+            onClick = {
+                val intent = Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("https://www.amazon.es/s?k=ELM327+Bluetooth+OBD2")
+                )
+                context.startActivity(intent)
+            },
+            modifier = Modifier.fillMaxWidth()
         ) {
-
-            Spacer(Modifier.height(92.dp))
-
-            CarLottieAnimation()
-
-            Spacer(Modifier.height(32.dp))
-
-            Text(
-                "Your car's\nbest friend",
-                color = textPrimary,
-                fontSize = 36.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            Text(
-                "Our AI-powered diagnostic app\ncan help you keep your car in top shape.",
-                color = textSecondary,
-                fontSize = 16.sp,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(Modifier.weight(1f))
-
-            GetStartedButton(onStart, AccentBlue)
+            Text("Buscar ELM327 en Amazon.es")
+        }
+        Button(onClick = onStart, modifier = Modifier.fillMaxWidth().height(54.dp)) {
+            Text("Empezar")
         }
     }
 }
 
 @Composable
 fun CarLottieAnimation() {
-    val composition by rememberLottieComposition(
-        LottieCompositionSpec.RawRes(R.raw.repair_car)
-    )
-
+    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.repair_car))
     val progress by animateLottieCompositionAsState(
         composition = composition,
         iterations = LottieConstants.IterateForever
     )
-
     LottieAnimation(
         composition = composition,
         progress = { progress },
-        modifier = Modifier.height(180.dp)
+        modifier = Modifier.height(170.dp)
     )
-}
-
-@Composable
-fun CarHero() {
-    Box(contentAlignment = Alignment.Center) {
-
-        Box(
-            modifier = Modifier
-                .size(260.dp)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(
-                            Color(0xFF007AFF).copy(alpha = 0.3f),
-                            Color.Transparent
-                        )
-                    ),
-                    CircleShape
-                )
-        )
-
-        Image(
-            painter = painterResource(R.drawable.kia_svg),
-            contentDescription = null,
-            modifier = Modifier.height(180.dp),
-            contentScale = ContentScale.Fit
-        )
-    }
-}
-
-@Composable
-fun GetStartedButton(onClick: () -> Unit, AccentBlue: Color) {
-    Column {
-        Button(
-            onClick = onClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(54.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = AccentBlue
-            )
-        ) {
-            Text("Get started", color = Color.White, fontWeight = FontWeight.SemiBold)
-        }
-
-        Spacer(Modifier.height(24.dp))
-    }
 }

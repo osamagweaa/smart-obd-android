@@ -104,11 +104,11 @@ Jetpack Compose UI
 
 # 🔗 External Libraries & Tools
 
-## 📦 obd-java-api
+## 📦 AndroidOBD
 
-https://github.com/pires/obd-java-api
+https://github.com/barnhill/AndroidOBD
 
-This library provides a set of ready-to-use **OBD commands and response parsers**.
+This Kotlin-native library provides the maintained **OBD command layer** for the app.
 
 It helps with:
 

@@ -1,6 +1,6 @@
 package com.example.obdapp.ui.dtc
 
-data class DtcInfo(
+data class LegacyDtcInfo(
     val code: String,
     val title: String,
     val severity: String,

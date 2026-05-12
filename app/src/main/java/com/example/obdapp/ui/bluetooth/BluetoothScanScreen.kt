@@ -40,18 +40,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.obdapp.bluetoothmanager.BluetoothConnectionState
-import com.example.obdapp.bluetoothmanager.BluetoothViewModel
+import com.example.obdapp.domain.model.ObdConnectionState
 
 
 @Composable
 fun BluetoothScanScreen(
     devices: List<BluetoothDevice>,
-    viewModel: BluetoothViewModel,
+    viewModel: BluetoothConnectViewModel,
     navController: NavController,
     onSkip: () -> Unit
 ) {
-    val connectionState by viewModel.connectionState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+    val connectionState = uiState.connectionState
 
     val AccentBlue = Color(0xFF007AFF)
     val AppBg = Color(0xFFF5F5F5)
@@ -59,7 +59,7 @@ fun BluetoothScanScreen(
     val textSecondary = Color(0xFF555555)
 
     LaunchedEffect(connectionState) {
-        if (connectionState is BluetoothConnectionState.Connected) {
+        if (connectionState is ObdConnectionState.Connected) {
             navController.navigate("home") {
                 popUpTo("bluetooth") { inclusive = true }
             }
@@ -91,28 +91,28 @@ fun BluetoothScanScreen(
         }
 
         when (connectionState) {
-            BluetoothConnectionState.Connecting -> {
+            ObdConnectionState.Connecting -> {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     CircularProgressIndicator(color = AccentBlue)
                     Spacer(Modifier.height(8.dp))
-                    Text("Connecting...", color = textPrimary)
+                    Text("Conectando...", color = textPrimary)
                 }
             }
-            is BluetoothConnectionState.Error -> {
+            is ObdConnectionState.Error -> {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("Connection failed", color = textPrimary)
+                    Text("Adaptador no encontrado. Asegúrate de que el ELM327 está enchufado y emparejado por Bluetooth.", color = textPrimary)
                     Spacer(Modifier.height(8.dp))
                     Button(
                         onClick = { viewModel.retry() },
                         colors = ButtonDefaults.buttonColors(containerColor = AccentBlue)
                     ) {
-                        Text("Retry", color = Color.White)
+                        Text("Reintentar", color = Color.White)
                     }
                 }
             }
@@ -121,7 +121,6 @@ fun BluetoothScanScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        // "Maybe Later" button
         Button(
             onClick = onSkip,
             modifier = Modifier
@@ -130,7 +129,7 @@ fun BluetoothScanScreen(
             shape = RoundedCornerShape(14.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray)
         ) {
-            Text("Maybe Later", color = textPrimary)
+            Text("Continuar sin conectar", color = textPrimary)
         }
     }
 }
@@ -167,7 +166,7 @@ fun DeviceItem(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = device.name ?: "Unknown Device",
+                    text = device.name ?: "Adaptador sin nombre",
                     fontWeight = FontWeight.Bold,
                     color = textPrimary
                 )
@@ -183,7 +182,7 @@ fun DeviceItem(
                 colors = ButtonDefaults.buttonColors(containerColor = AccentBlue),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Connect", color = Color.White)
+                Text("Conectar", color = Color.White)
             }
         }
     }
@@ -199,7 +198,7 @@ fun startBluetoothScan(
             if (BluetoothDevice.ACTION_FOUND == intent?.action) {
                 val device: BluetoothDevice? =
                     intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
-                device?.let { onDeviceFound(it) }
+                device?.takeIf(::isElmDevice)?.let { onDeviceFound(it) }
             }
         }
     }
@@ -208,4 +207,10 @@ fun startBluetoothScan(
     context.registerReceiver(receiver, filter)
 
     bluetoothAdapter.startDiscovery()
+}
+
+@SuppressLint("MissingPermission")
+fun isElmDevice(device: BluetoothDevice): Boolean {
+    val name = device.name.orEmpty().uppercase()
+    return listOf("OBD", "ELM", "OBDII", "TORQUE", "VGATE", "KONNWEI").any { it in name }
 }

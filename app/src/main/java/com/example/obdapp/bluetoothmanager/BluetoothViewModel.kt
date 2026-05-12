@@ -3,7 +3,7 @@ package com.example.obdapp.bluetoothmanager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.obdapp.App
-import com.example.obdapp.ui.dtc.DtcInfo
+import com.example.obdapp.ui.dtc.LegacyDtcInfo
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
@@ -68,7 +68,7 @@ class BluetoothViewModel() : ViewModel() {
     val rpmHistory = MutableStateFlow<List<Float>>(emptyList())
 
 
-    val dtcMap: Map<String, DtcInfo> by lazy {
+    val dtcMap: Map<String, LegacyDtcInfo> by lazy {
         // get application context from your singleton / app class
         val context = App.instance.applicationContext
 
@@ -76,12 +76,12 @@ class BluetoothViewModel() : ViewModel() {
             .bufferedReader()
             .use { it.readText() }
 
-        val type = object : TypeToken<Map<String, DtcInfo>>() {}.type
-        Gson().fromJson<Map<String, DtcInfo>>(jsonString, type)
+        val type = object : TypeToken<Map<String, LegacyDtcInfo>>() {}.type
+        Gson().fromJson<Map<String, LegacyDtcInfo>>(jsonString, type)
     }
 
-    private val _dtcList = MutableStateFlow<List<DtcInfo>>(emptyList())
-    val dtcList: StateFlow<List<DtcInfo>> = _dtcList
+    private val _dtcList = MutableStateFlow<List<LegacyDtcInfo>>(emptyList())
+    val dtcList: StateFlow<List<LegacyDtcInfo>> = _dtcList
 
     fun updateDtcFromString(dtcString: String) {
         val codes = dtcString
@@ -90,7 +90,7 @@ class BluetoothViewModel() : ViewModel() {
             .filter { it.isNotEmpty() }
 
         _dtcList.value = codes.map { code ->
-            dtcMap[code]?.copy(code = code) ?: DtcInfo(
+            dtcMap[code]?.copy(code = code) ?: LegacyDtcInfo(
                 code= code,
                 title = "Unknown code",
                 severity = "UNKNOWN",

@@ -14,6 +14,9 @@ sealed class Route(val name: String) {
     data object Units : Route("units")
     data object Bluetooth : Route("bluetooth")
     data object Report : Route("report")
+    data object SafeToday : Route("safe_today")
+    data object Itv : Route("itv")
+    data object Dpf : Route("dpf")
 
 
 

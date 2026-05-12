@@ -1,10 +1,7 @@
 package com.example.obdapp.ui.dtc
 
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,307 +9,144 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.obdapp.bluetoothmanager.BluetoothViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.obdapp.domain.model.DtcInfo
+import com.example.obdapp.domain.model.DtcSeverity
 
 @Composable
-fun DtcScreenPro(
-    onReadClick: () -> Unit,
-    onClearClick: () -> Unit,
-    viewModel: BluetoothViewModel = viewModel()
+fun DtcScreen(
+    onOpenReport: () -> Unit,
+    viewModel: DtcViewModel = hiltViewModel()
 ) {
-    val dtcList by viewModel.dtcList.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+    var confirmClear by remember { mutableStateOf(false) }
+    val hasFaults = uiState.result.milOn || uiState.result.allCodes.isNotEmpty()
 
-    val AccentBlue = Color(0xFF007AFF)
-    val AppBg = Color(0xFFF5F5F5)
-    val textPrimary = Color(0xFF1A1A1A)
-    val textSecondary = Color(0xFF555555)
-
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(AppBg)
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+            .background(Color(0xFFF5F7FA))
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-
-        // --- Header ---
-        Column {
-            Text(
-                text = "Diagnostic Trouble Codes",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = textPrimary
-            )
-            Text(
-                text = "Know your vehicle’s issues in real time",
-                fontSize = 14.sp,
-                color = textSecondary
-            )
+        item { Spacer(Modifier.height(22.dp)) }
+        item {
+            Text("Luz del motor", fontSize = 30.sp, fontWeight = FontWeight.Bold)
+            StatusBadge(hasFaults)
         }
-
-        // --- Info Card (Expandable) ---
-        DtcInfoCard(AccentBlue, textPrimary, textSecondary)
-
-        // --- Clear Button ---
-        Button(
-            onClick = onClearClick,
-            modifier = Modifier.fillMaxWidth().height(50.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFD32F2F),
-                contentColor = Color.White
-            )
-        ) {
-            Icon(Icons.Default.Delete, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text("Clear DTCs")
+        items(uiState.result.allCodes) { dtc ->
+            DtcCard(dtc)
         }
-
-        // --- DTC List ---
-        if (dtcList.isNotEmpty()) {
-            DetectedCodesHeader(dtcList.size)
-            dtcList.forEach { dtc ->
-                DtcCard(dtc) // your card from previous step
+        if (!hasFaults) {
+            item {
+                Text("No hay averías activas guardadas en este momento.", color = Color(0xFF667085))
             }
-        } else {
-            NoCodesCard()
+        }
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Button(
+                    onClick = { confirmClear = true },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = hasFaults
+                ) { Text("Borrar averías") }
+                OutlinedButton(onClick = onOpenReport, modifier = Modifier.fillMaxWidth()) {
+                    Text("Ver informe mecánico")
+                }
+            }
         }
     }
+
+    if (confirmClear) {
+        AlertDialog(
+            onDismissRequest = { confirmClear = false },
+            title = { Text("¿Borrar averías?") },
+            text = { Text("Esto apaga los avisos guardados, pero no repara la causa. Hazlo solo después de revisar el problema.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmClear = false
+                    viewModel.clear()
+                }) { Text("Borrar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmClear = false }) { Text("Cancelar") }
+            }
+        )
+    }
 }
+
 @Composable
-fun NoCodesCard() {
+private fun StatusBadge(hasFaults: Boolean) {
+    val color = if (hasFaults) Color(0xFFFFF3D6) else Color(0xFFE7F8EE)
+    val text = if (hasFaults) "⚠️ Avería detectada" else "✅ Sin averías"
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .padding(top = 14.dp),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = color)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.CheckCircle,
-                contentDescription = null,
-                tint = Color(0xFF4CAF50),
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = "No codes detected",
-                fontSize = 14.sp,
-                color = Color(0xFF555555),
-                fontWeight = FontWeight.Medium
-            )
-        }
-    }
-}
-@Composable
-fun DetectedCodesHeader(count: Int) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.List,
-                contentDescription = null,
-                tint = Color(0xFF007AFF),
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = "Detected Codes",
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 16.sp,
-                color = Color(0xFF007AFF)
-            )
-            Spacer(Modifier.width(6.dp))
-            Text(
-                text = "($count)",
-                fontSize = 14.sp,
-                color = Color.Gray
-            )
-        }
-
-        // ✅ Status phrase
-        Text(
-            text = "Your vehicle has $count issue${if(count > 1) "s" else ""}. Review below for details.",
-            fontSize = 12.sp,
-            color = Color.Gray,
-            modifier = Modifier.padding(start = 28.dp, bottom = 6.dp)
-        )
+        Text(text, fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(18.dp))
     }
 }
 
 @Composable
-fun DtcInfoCard(accent: Color, textPrimary: Color, textSecondary: Color) {
-
-    var expanded by remember { mutableStateOf(false) }
-
-    val shortText =
-        "Diagnostic trouble codes (DTCs) are alphanumeric codes output by your vehicle's computer when it detects a malfunction."
-
-    val fullText = """
-Diagnostic trouble codes (DTCs) are alphanumeric codes output by your vehicle's computer when it detects a malfunction.
-
-Types:
-• Stored DTC – confirmed malfunction saved in memory
-• Pending DTC – detected in current drive cycle
-• Permanent DTC – confirmed and cannot be erased
-
-Clearing instructions:
-1. Ignition ON, engine OFF
-2. Connect scanner
-3. Clear DTCs
-4. Restart vehicle
-""".trimIndent()
-
+private fun DtcCard(dtc: DtcInfo) {
     Card(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp).animateContentSize()
-        ) {
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Info, contentDescription = null, tint = accent)
-                Spacer(Modifier.width(8.dp))
-                Text("What are DTCs?", fontWeight = FontWeight.SemiBold, color = textPrimary)
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                Text(dtc.titleEs, fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.weight(1f))
+                SeverityBadge(dtc.severity)
             }
-
-            Spacer(Modifier.height(8.dp))
-
+            Text(dtc.descriptionEs, color = Color(0xFF475467))
             Text(
-                text = if (expanded) fullText else shortText,
-                fontSize = 14.sp,
-                color = textSecondary,
-                maxLines = if (expanded) Int.MAX_VALUE else 3,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            Spacer(Modifier.height(6.dp))
-
-            Text(
-                text = if (expanded) "Read less" else "Read more",
-                color = accent,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.clickable { expanded = !expanded }
+                "Coste orientativo: ${dtc.estimatedRepairEuros.first}-${dtc.estimatedRepairEuros.last}€",
+                fontWeight = FontWeight.SemiBold
             )
         }
     }
 }
+
 @Composable
-fun DtcCard(info: DtcInfo) {
-
-    val severityColor = when (info.severity) {
-        "HIGH" -> Color(0xFFD32F2F)
-        "MEDIUM" -> Color(0xFFFFA000)
-        "LOW" -> Color(0xFF4CAF50)
-        else -> Color.Gray
+private fun SeverityBadge(severity: DtcSeverity) {
+    val color = when (severity) {
+        DtcSeverity.GRAVE -> Color(0xFFDC2626)
+        DtcSeverity.MODERADO -> Color(0xFFD97706)
+        DtcSeverity.INFORMATIVO -> Color(0xFF2563EB)
     }
-
-    val bgColor = severityColor.copy(alpha = 0.10f)
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = bgColor)
-    ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.Warning,
-                    contentDescription = null,
-                    tint = severityColor
-                )
-
-                Spacer(Modifier.width(8.dp))
-
-                Column {
-                    Text(
-                        text = info.code,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        color = severityColor
-                    )
-
-                    Text(
-                        text = info.title,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 15.sp
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(6.dp))
-
-            Text(
-                text = info.description,
-                fontSize = 13.sp,
-                color = Color.DarkGray
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            SeverityChip(info.severity, severityColor)
-        }
-    }
-}
-@Composable
-fun SeverityChip(severity: String, color: Color) {
-    Box(
+    Text(
+        severity.name,
+        color = Color.White,
+        fontSize = 11.sp,
+        fontWeight = FontWeight.Bold,
         modifier = Modifier
-            .background(color.copy(alpha = 0.15f), RoundedCornerShape(50))
-            .padding(horizontal = 12.dp, vertical = 4.dp)
-    ) {
-        Text(
-            text = severity,
-            color = color,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold
-        )
-    }
+            .background(color, RoundedCornerShape(50))
+            .padding(horizontal = 9.dp, vertical = 5.dp)
+    )
 }
