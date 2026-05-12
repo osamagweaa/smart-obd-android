@@ -131,6 +131,8 @@ class ObdJavaApiDataSource : ObdDataSource {
         connected = false
     }
 
+    fun disconnectOBD() = disconnect()
+
     private fun String.cleanElm(): String =
         replace("\r", " ").replace("\n", " ").replace(">", "").trim()
 }
