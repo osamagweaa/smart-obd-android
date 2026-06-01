@@ -47,6 +47,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -154,4 +155,8 @@ dependencies {
     ksp(libs.hilt.compiler)
     // Google Generative AI SDK
     //implementation("com.google.ai:generativelanguage:1.0.0")
+
+    // Firebase Crashlytics (add google-services.json from Firebase Console before enabling plugins)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.crashlytics)
 }

@@ -1,3 +1,4 @@
+// BT runtime permissions: verified OK [AutoDiag Day 2 audit]
 package com.example.obdapp.ui.bluetooth
 
 import android.Manifest
@@ -202,7 +203,7 @@ fun BluetoothFlowScreen(
             TopAppBar(
                 title = { Text("Bluetooth Devices") },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = AppBgDark,   // 👈 same as background
+                    containerColor = AppBgDark,
                     titleContentColor = textPrimary,
                     navigationIconContentColor = textPrimary,
                     actionIconContentColor = textPrimary

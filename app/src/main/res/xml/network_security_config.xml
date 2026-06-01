@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Block all cleartext (HTTP) traffic globally -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
+    </base-config>
+
+    <!--
+        LLM proxy used by both LLMApi and OpenAiApi (NetworkModule base URL: https://apifreellm.com/api/)
+        TODO: Add certificate pin after first successful connection:
+              openssl s_client -connect apifreellm.com:443 </dev/null \
+                | openssl x509 -pubkey -noout \
+                | openssl pkey -pubin -outform der \
+                | openssl dgst -sha256 -binary \
+                | base64
+              Then add inside this domain-config:
+              <pin-set>
+                  <pin digest="SHA-256">BASE64_HASH_HERE</pin>
+              </pin-set>
+    -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">apifreellm.com</domain>
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
+    </domain-config>
+
+    <!--
+        Future: if direct Gemini or OpenAI calls are added, include their domains:
+        <domain-config cleartextTrafficPermitted="false">
+            <domain includeSubdomains="true">generativeai.googleapis.com</domain>
+            <trust-anchors><certificates src="system"/></trust-anchors>
+        </domain-config>
+        <domain-config cleartextTrafficPermitted="false">
+            <domain includeSubdomains="true">api.openai.com</domain>
+            <trust-anchors><certificates src="system"/></trust-anchors>
+        </domain-config>
+    -->
+</network-security-config>
