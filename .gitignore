@@ -1,0 +1,25 @@
+# Local and generated files
+.gradle/
+.idea/
+.kotlin/
+/build/
+app/build/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Signing material and credentials
+keystore/
+keystore.properties
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+.env
+.env.*
+
+# Device reports and local artifacts
+bugreport*/
+*.log
